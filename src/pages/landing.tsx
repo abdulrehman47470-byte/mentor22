@@ -7,7 +7,7 @@ import { useMe } from '@/lib/store';
 /** "/": signed-in students go straight to Home, everyone else to the landing page. */
 export function Start() {
   const user = useMe();
-  return <Navigate to={user ? '/home' : '/welcome'} replace />;
+  return <Navigate to={user ? '/discover' : '/welcome'} replace />;
 }
 
 /** Branded loading screen, shown once each time the app is opened. Short, so it never slows anyone down. */
@@ -44,7 +44,7 @@ export function BootSplash() {
 export function Welcome() {
   const nav = useNavigate();
   const user = useMe();
-  if (user) return <Navigate to="/home" replace />;
+  if (user) return <Navigate to="/discover" replace />;
   // Accounts are created by the college on admin.mentorandmatch.com, so both buttons lead to Log In.
   const logIn = () => nav('/login');
   return (

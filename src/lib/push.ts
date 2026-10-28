@@ -1,4 +1,4 @@
-// Push notifications (mock). Shows a real system notification with the app icon when the
+// Branded push notifications (mock). Shows a real system notification with the APEX icon when the
 // browser allows it, plus an in-app branded banner. Phase 1 swaps this for Firebase Cloud Messaging.
 import { BRAND } from '@/config/brand';
 

@@ -1,21 +1,89 @@
 import {
-  Accessibility as AccessibilityIcon, Award, Bell, BookOpen, Briefcase, CalendarClock, ChevronRight, ExternalLink, FileText, GraduationCap, HeartHandshake, HelpCircle,
-  KeyRound, LifeBuoy, LogOut, MessageSquareText, Phone, ScrollText, ShieldAlert, ShieldCheck, Siren, Building2,
+  Accessibility as AccessibilityIcon, Award, Ban, Bell, BookOpen, Briefcase, Building2, CalendarClock, CalendarDays, ChevronRight, Clock, ExternalLink, Eye, FileText, GraduationCap,
+  HeartHandshake, HelpCircle, KeyRound, LifeBuoy, LogOut, MessageCircle, MessageSquareText, Phone, ScrollText, ShieldAlert, ShieldCheck, Siren, Trash2, UserCheck, UserPen, UserPlus,
 } from 'lucide-react';
 import { useState, type ComponentType } from 'react';
-import { Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { BRAND } from '@/config/brand';
 import { L, type LabelKey } from '@/data/labels';
-import { CERTIFICATES } from '@/data/mock';
 import { HELP_REASONS, LINKS, RESOURCE_ITEMS, SETTINGS, type SettingsItem } from '@/data/options';
 import { POLICIES, type PolicyKey } from '@/data/policies';
-import { Avatar, Button, Card, Empty, Field, Header, Input, Mark, PasswordInput, Select, TextArea, Toggle, ask, openExternal, toast } from '@/components/ui';
+import { Avatar, Button, Card, Empty, Field, Header, Input, Mark, Page, PasswordInput, PoweredBy, SectionTitle, Select, Sheet, TextArea, Toggle, ask, openExternal, toast } from '@/components/ui';
 import { PolicyBody } from '@/components/policy';
 import { Strength } from '@/pages/auth';
-import { changePassword, collegeName, collegeResources, fullName, markNotificationsRead, sendHelp, setReduceMotion, setTextScale, signOut, strongPassword, validEmail } from '@/lib/api';
+import {
+  changePassword, deleteAccount, fullName, isAdmin, isMentorType, markNotificationsRead, sendHelp, setPushEnabled, setReduceMotion, setTextScale, signOut, strongPassword, unblock, userById, validEmail,
+} from '@/lib/api';
+import { askPushPermission } from '@/lib/push';
 import { cn, timeAgo, useDb, useMe } from '@/lib/store';
+import type { AppNotification } from '@/lib/types';
+import { resourceImage } from '@/data/media';
 
-const ICONS: Partial<Record<LabelKey, ComponentType<{ className?: string }>>> = {
+const ICONS: Record<AppNotification['type'], React.ReactNode> = {
+  view_profile: <Eye />, request: <UserPlus />, accepted: <UserCheck />, chat: <MessageCircle />, meeting: <CalendarDays />, call: <Phone />, system: <Bell />,
+};
+
+/** Each notification type opens its screen (architecture: type tells the app where to go). */
+function target(n: AppNotification) {
+  switch (n.type) {
+    case 'view_profile': return `/member/${n.relatedId}`;
+    case 'request': return '/connections';
+    case 'accepted': return `/member/${n.relatedId}`;
+    case 'chat': return `/messages/${n.relatedId}`;
+    case 'meeting': return '/meetings';
+    case 'call': return `/messages/${n.relatedId}`;
+    default: return null;
+  }
+}
+
+/** Notifications: title, description, time and photo (content document, section 10). */
+export function Notifications() {
+  const nav = useNavigate();
+  const list = useDb((d) => d.notifications.filter((n) => n.userId === d.sessionUserId));
+  const users = useDb((d) => d.users);
+  const unread = list.some((n) => !n.read);
+  return (
+    <div>
+      <Header title={L.notifications} back right={unread && <button onClick={markNotificationsRead} className="text-sm font-semibold text-orange-text">Mark all read</button>} />
+      <ul className="divide-y divide-line">
+        {list.map((n) => {
+          const from = users.find((u) => u.id === n.relatedId);
+          return (
+            <li key={n.id}>
+              <button onClick={() => { const t = target(n); if (t) nav(t); }} className={cn('flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-bg-soft', !n.read && 'bg-orange-fill/50')}>
+                {from ? <Avatar user={from} size={40} /> : <span className="grid size-10 shrink-0 place-items-center rounded-full bg-orange-fill text-orange-text [&_svg]:size-5">{ICONS[n.type]}</span>}
+                <span className="min-w-0 flex-1">
+                  <span className="block font-semibold">{n.title}</span>
+                  <span className="block text-sm text-muted">{n.body}</span>
+                  <span className="text-xs text-faint">{timeAgo(n.createdAt)}</span>
+                </span>
+                {!n.read && <span className="mt-2 size-2.5 rounded-full bg-orange" />}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      {!list.length && <Empty icon={<Bell className="size-7" />} title={L.no_data} />}
+    </div>
+  );
+}
+
+function Row({ icon, label, to, onClick, sub, danger, external }: { icon: React.ReactNode; label: string; to?: string; onClick?: () => void; sub?: string; danger?: boolean; external?: boolean }) {
+  const inner = (
+    <span className={cn('flex items-center gap-3 px-4 py-3.5 [&>svg:first-child]:size-5', danger ? 'text-danger' : '[&>svg:first-child]:text-orange-text')}>
+      {icon}
+      <span className="flex-1">
+        <span className="block text-[15px] font-medium">{label}</span>
+        {sub && <span className="block text-xs text-faint">{sub}</span>}
+      </span>
+      {!danger && (external ? <ExternalLink className="size-4 text-faint" /> : <ChevronRight className="size-4 text-faint" />)}
+    </span>
+  );
+  return to ? <Link to={to} className="block hover:bg-bg-soft">{inner}</Link> : <button onClick={onClick} className="block w-full text-left hover:bg-bg-soft">{inner}</button>;
+}
+
+// ---------- Settings menu (content document, section 4) ----------
+const ITEM_ICONS: Partial<Record<LabelKey, ComponentType>> = {
   mentee_resources: BookOpen,
   mentee_training: Award,
   edvisorly_transfer_planning: GraduationCap,
@@ -39,6 +107,7 @@ const ICONS: Partial<Record<LabelKey, ComponentType<{ className?: string }>>> = 
 
 const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
+/** Runs a Settings item: opens a screen, an outside link (after the Disclaimer), a call or a text. */
 function useRunItem() {
   const nav = useNavigate();
   return async (item: SettingsItem) => {
@@ -54,141 +123,197 @@ function useRunItem() {
   };
 }
 
-function ItemRow({ item, detail }: { item: SettingsItem; detail?: string }) {
+function ItemRow({ item }: { item: SettingsItem }) {
   const run = useRunItem();
-  const Icon = ICONS[item.label] ?? ChevronRight;
+  const Icon = ITEM_ICONS[item.label] ?? ChevronRight;
   const a = item.action;
-  const hint = detail ?? (a.kind === 'call' ? a.number : a.kind === 'sms' ? `Text ${a.body} to ${a.number}` : undefined);
-  return (
-    <button onClick={() => run(item)} className="flex w-full items-center gap-3.5 px-4 py-3.5 text-left transition hover:bg-bg-soft">
-      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-brand-light text-brand">
-        <Icon className="size-5" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[15px] font-semibold text-ink">{L[item.label]}</span>
-        {hint && <span className="block text-xs text-muted">{hint}</span>}
-      </span>
-      {a.kind === 'external' ? <ExternalLink className="size-4 text-muted" /> : <ChevronRight className="size-5 text-muted" />}
-    </button>
-  );
+  const sub = a.kind === 'call' ? a.number : a.kind === 'sms' ? `Text ${a.body} to ${a.number}` : undefined;
+  return <Row icon={<Icon />} label={L[item.label]} sub={sub} onClick={() => run(item)} external={a.kind === 'external'} />;
 }
 
-function Group({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="mt-5 first:mt-0">
-      <h2 className="mb-2 px-1 text-xs font-bold uppercase tracking-wider text-muted">{title}</h2>
-      <div className="shadow-card divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">{children}</div>
-    </section>
-  );
-}
+const group = 'divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface';
 
 export function Settings() {
+  const me = useMe()!;
   const nav = useNavigate();
-  const user = useMe()!;
+  const push = useDb((d) => d.pushEnabled);
+  const admin = useDb((d) => isAdmin(d));
+  const [confirmDelete, setConfirmDelete] = useState(false);
   return (
-    <div className="min-h-app pb-10">
+    <div>
       <Header title={L.settings} back />
-      <div className="px-4 py-4">
-        <Card onClick={() => nav('/profile')} className="mb-5 flex items-center gap-3.5">
-          <Avatar user={user} size={52} />
-          <div className="min-w-0 flex-1">
-            <p className="truncate font-bold text-ink">{fullName(user)}</p>
-            <p className="truncate text-sm text-muted">{collegeName(user)}</p>
-          </div>
-          <ChevronRight className="size-5 text-muted" />
+      <Page>
+        <Card className="flex items-center gap-3">
+          <Avatar user={me} size={52} />
+          <div className="min-w-0 flex-1"><p className="truncate font-semibold">{fullName(me)}</p><p className="truncate text-sm text-muted">{me.email}</p></div>
         </Card>
+        <SectionTitle>Account</SectionTitle>
+        <div className={group}>
+          <Row icon={<UserPen />} label={L.edit_profile} to="/profile/edit" />
+          {isMentorType(me.role) && <Row icon={<Clock />} label={L.set_availability} to="/availability" />}
+          {admin && <Row icon={<ShieldCheck />} label="Super Admin panel" sub="Users, branding, push, content" to="/admin" />}
+          <Row icon={<Ban />} label="Blocked members" to="/blocked" />
+        </div>
+        <SectionTitle>{L.notifications}</SectionTitle>
+        <div className={cn(group, 'px-4')}>
+          <Toggle checked={push} onChange={async (v) => {
+            setPushEnabled(v);
+            if (v) {
+              const r = await askPushPermission();
+              toast(r === 'granted' ? 'Push notifications on' : 'In-app notifications on');
+            }
+          }} label="Push notifications" sub="Requests, messages, meetings and calls" />
+        </div>
         {SETTINGS.map((g) => (
-          <Group key={g.title} title={g.title}>
-            {g.items.map((i) => (
-              <ItemRow key={i.label} item={i} />
-            ))}
-          </Group>
+          <div key={g.title}>
+            <SectionTitle>{g.title}</SectionTitle>
+            <div className={group}>
+              {g.items.filter((i) => !(i.label === 'set_availability' && isMentorType(me.role))).map((i) => <ItemRow key={i.label} item={i} />)}
+            </div>
+          </div>
         ))}
-        <Button
-          size="lg"
-          variant="outline"
-          className="mt-6 text-danger"
-          onClick={async () => {
+        <div className={cn(group, 'mt-5')}>
+          <Row icon={<LogOut />} label={L.sign_out} danger onClick={async () => {
             if ((await ask({ message: L.are_you_sure_you_want_to_logout_q, danger: true, confirm: L.sign_out })) === null) return;
             signOut();
             toast(L.logout_successfully);
             nav('/welcome', { replace: true });
-          }}
-        >
-          <LogOut className="size-5" />
-          {L.sign_out}
-        </Button>
-        <p className="mt-6 flex items-center justify-center gap-2 text-xs text-muted">
-          <Mark size={14} />
-          {L.app_name} · {L.mentor_match_educational_purpose_only}
-        </p>
-      </div>
+          }} />
+          <Row icon={<Trash2 />} label="Delete account" danger onClick={() => setConfirmDelete(true)} />
+        </div>
+        <div className="mt-8 flex flex-col items-center gap-1 pb-6 text-center">
+          <Mark size={40} />
+          <p className="mt-1 text-xs font-semibold">{BRAND.appName}</p>
+          <p className="text-xs text-faint">{L.mentor_match_educational_purpose_only}</p>
+          <PoweredBy className="mt-3" />
+        </div>
+      </Page>
+      <Sheet open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete account?">
+        <p className="text-muted">This permanently removes your profile, connections and messages. This can’t be undone.</p>
+        <div className="mt-5 flex gap-3">
+          <Button variant="outline" className="flex-1" onClick={() => setConfirmDelete(false)}>{L.cancel}</Button>
+          <Button variant="danger" className="flex-1" onClick={() => { deleteAccount(); nav('/welcome', { replace: true }); }}>Delete</Button>
+        </div>
+      </Sheet>
     </div>
   );
 }
 
-/** "Mentee Resources" sub-menu. */
+/** "Mentee Resources" sub-menu: Mentee Training and EDvisorly Transfer Planning. */
 export function ResourcesMenu() {
   return (
-    <div className="min-h-app">
-      <Header title={L.mentee_resources} back="/settings" />
-      <div className="px-4 py-4">
-        <Group title={L.mentee_resources}>
-          {RESOURCE_ITEMS.map((i) => (
-            <ItemRow key={i.label} item={i} />
-          ))}
-        </Group>
-      </div>
+    <div>
+      <Header title={L.mentee_resources} back />
+      <Page>
+        <div className={group}>
+          {RESOURCE_ITEMS.map((i) => <ItemRow key={i.label} item={i} />)}
+        </div>
+      </Page>
     </div>
   );
 }
 
-/** Mentee Training: training certificates (loaded per college after login). */
+const CERTIFICATES = [
+  { id: 't1', title: 'Mentee Orientation', completedAt: '2026-09-02T17:00:00Z' },
+  { id: 't2', title: 'Making the Most of Your Mentor', completedAt: '2026-09-15T17:00:00Z' },
+  { id: 't3', title: 'Professional Communication', completedAt: null },
+];
+
+/** Mentee Training: training certificates (loaded per college after log-in; demo entries here). */
 export function Training() {
   return (
-    <div className="min-h-app">
+    <div>
       <Header title={L.mentee_training} back />
-      <div className="px-4 py-4">
-        <h2 className="mb-3 text-[17px] font-bold text-brand-dark">{L.training_certificates}</h2>
+      <Page>
+        <SectionTitle>{L.training_certificates}</SectionTitle>
         <div className="space-y-3">
           {CERTIFICATES.map((c) => (
             <Card key={c.id} className="flex items-center gap-3.5">
-              <span className={cn('grid size-12 shrink-0 place-items-center rounded-xl', c.completedAt ? 'bg-success/10 text-success' : 'bg-brand-light text-brand')}>
-                <Award className="size-6" />
-              </span>
+              <span className={cn('grid size-12 shrink-0 place-items-center rounded-xl', c.completedAt ? 'bg-success/10 text-success' : 'bg-orange-fill text-orange-text')}><Award className="size-6" /></span>
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-ink">{c.title}</p>
-                <p className="text-xs text-muted">{c.completedAt ? `${L.completed} · ${new Date(c.completedAt).toLocaleDateString()}` : L.pending}</p>
+                <p className="font-semibold">{c.title}</p>
+                <p className="text-xs text-faint">{c.completedAt ? `${L.completed} · ${new Date(c.completedAt).toLocaleDateString()}` : L.pending}</p>
               </div>
             </Card>
           ))}
         </div>
-      </div>
+      </Page>
     </div>
   );
 }
 
-/** myCollege Resources: the college's own resource list. */
-export function CollegeResources() {
-  const user = useMe()!;
-  const list = collegeResources(user.collegeId);
+/** myCollege Resources: the college's own list, managed by Super Admins (Admin → Content). */
+export function Resources() {
+  const resources = useDb((d) => d.resources);
+  const cats = [...new Set(resources.map((r) => r.category))];
   return (
-    <div className="min-h-app">
-      <Header title={L.my_college_resources} sub={collegeName(user)} back />
-      <div className="space-y-3 px-4 py-4">
-        {list.map((r) => (
-          <Card key={r.id} className="flex gap-3.5">
-            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-brand-light text-brand">
-              <Building2 className="size-5" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="font-semibold text-ink">{r.title}</p>
-              <p className="mt-0.5 text-sm text-muted">{r.description}</p>
+    <div>
+      <Header title={L.my_college_resources} back />
+      <Page>
+        <Card className="mb-2 flex items-center gap-3 border-orange/40 bg-orange-fill">
+          <LifeBuoy className="size-6 text-orange-text" />
+          <div className="flex-1"><p className="font-semibold">Need help now?</p><p className="text-sm text-muted">{L.suicide_prevention_hotline}: call <b>988</b> · {L.emergency}: <b>911</b></p></div>
+        </Card>
+        {cats.map((c) => (
+          <div key={c}>
+            <div className="relative mb-2 mt-5 h-24 overflow-hidden rounded-2xl">
+              <img loading="lazy" decoding="async" src={resourceImage(c)} alt="" className="size-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-r from-navy/85 via-navy/40 to-transparent" />
+              <p className="font-display absolute bottom-3 left-4 text-lg font-bold text-white">{c}</p>
             </div>
-          </Card>
+            <div className="space-y-2">
+              {resources.filter((r) => r.category === c).map((r) => (
+                <button key={r.id} onClick={() => openExternal(r.url)} className="block w-full text-left">
+                  <Card className="flex items-start gap-3 hover:border-line-strong">
+                    <div className="flex-1"><p className="font-semibold">{r.title}</p><p className="text-sm text-muted">{r.description}</p></div>
+                    <ExternalLink className="size-4 text-faint" />
+                  </Card>
+                </button>
+              ))}
+            </div>
+          </div>
         ))}
-        {!list.length && <Empty icon={<Building2 className="size-7" />} title={L.no_college_resource} />}
-      </div>
+        {!resources.length && <Empty icon={<Building2 className="size-7" />} title={L.no_college_resource} />}
+      </Page>
+    </div>
+  );
+}
+
+export function Blocked() {
+  const ids = useDb((d) => d.blocks.filter((b) => b.userId === d.sessionUserId).map((b) => b.blockedId));
+  const users = useDb((d) => ids.map((id) => userById(id, d)!).filter(Boolean));
+  return (
+    <div>
+      <Header title="Blocked members" back />
+      <ul className="divide-y divide-line">
+        {users.map((u) => (
+          <li key={u.id} className="flex items-center gap-3 px-4 py-3">
+            <Avatar user={u} size={44} />
+            <span className="flex-1 font-semibold">{fullName(u)}</span>
+            <Button size="sm" variant="outline" onClick={() => { unblock(u.id); toast(`${u.profile.firstName} unblocked`); }}>{L.unblock}</Button>
+          </li>
+        ))}
+      </ul>
+      {!users.length && <Empty icon={<Ban className="size-7" />} title={L.no_data} />}
+    </div>
+  );
+}
+
+/** Older link names for the policy pages. */
+const ALIASES: Record<string, PolicyKey> = { guidelines: 'code-of-conduct' };
+
+/** Policy pages: the admin-editable copy (Admin → Content). Open to everyone. */
+export function Legal() {
+  const { key = 'terms' } = useParams();
+  const k = (ALIASES[key] ?? key) as PolicyKey;
+  const body = useDb((d) => d.cms[k]);
+  if (!POLICIES[k]) return <Navigate to="/" replace />;
+  return (
+    <div>
+      <Header title={POLICIES[k].title} back />
+      <Page>
+        <PolicyBody body={body ?? POLICIES[k].body} />
+      </Page>
     </div>
   );
 }
@@ -200,7 +325,7 @@ export function ResetPassword() {
   const [confirm, setConfirm] = useState('');
   const [err, setErr] = useState('');
   return (
-    <div className="min-h-app">
+    <div>
       <Header title={L.reset_password} back />
       <form
         noValidate
@@ -224,7 +349,7 @@ export function ResetPassword() {
         <Field label={L.new_password}><PasswordInput autoComplete="new-password" value={pw} onChange={(e) => (setPw(e.target.value), setErr(''))} placeholder={L.new_password} /></Field>
         <Strength password={pw} />
         <Field label={L.confirm_new_password}><PasswordInput autoComplete="new-password" value={confirm} onChange={(e) => (setConfirm(e.target.value), setErr(''))} placeholder={L.confirm_new_password} /></Field>
-        {err && <p className="mb-3 rounded-xl bg-danger/8 px-3.5 py-2.5 text-sm font-medium text-danger" role="alert">{err}</p>}
+        {err && <p className="mb-3 rounded-xl bg-danger/10 px-3.5 py-2.5 text-sm font-medium text-danger" role="alert">{err}</p>}
         <Button size="lg" type="submit">{L.reset_password}</Button>
       </form>
     </div>
@@ -241,14 +366,14 @@ export function AccessibilityPage() {
     { v: 1.25, label: 'Larger' },
   ];
   return (
-    <div className="min-h-app">
+    <div>
       <Header title={L.accessibility} back />
-      <div className="px-4 py-5">
+      <Page>
         <Card>
-          <p className="mb-3 font-semibold text-ink">Text size</p>
+          <p className="mb-3 font-semibold">Text size</p>
           <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Text size">
             {sizes.map((s) => (
-              <button key={s.v} role="radio" aria-checked={scale === s.v} onClick={() => setTextScale(s.v)} className={cn('rounded-xl border py-3 font-semibold transition', scale === s.v ? 'border-brand bg-brand text-white' : 'border-line-strong text-ink')} style={{ fontSize: 14 * s.v }}>
+              <button key={s.v} role="radio" aria-checked={scale === s.v} onClick={() => setTextScale(s.v)} className={cn('rounded-xl border py-3 font-semibold transition', scale === s.v ? 'border-navy bg-navy text-white' : 'border-line-strong')} style={{ fontSize: 14 * s.v }}>
                 {s.label}
               </button>
             ))}
@@ -258,7 +383,7 @@ export function AccessibilityPage() {
           </div>
         </Card>
         <p className="mt-4 text-sm text-muted">For screen readers, contrast and other options, use your phone’s accessibility settings. This app supports them.</p>
-      </div>
+      </Page>
     </div>
   );
 }
@@ -273,7 +398,7 @@ export function HelpSupport() {
   const [message, setMessage] = useState('');
   const [err, setErr] = useState('');
   return (
-    <div className="min-h-app">
+    <div>
       <Header title={L.help_and_support} back />
       <form
         noValidate
@@ -294,61 +419,10 @@ export function HelpSupport() {
         <Field label={L.name}><Input value={name} onChange={(e) => (setName(e.target.value), setErr(''))} autoComplete="name" /></Field>
         <Field label={L.email}><Input type="email" value={email} onChange={(e) => (setEmail(e.target.value), setErr(''))} autoComplete="email" /></Field>
         <Field label={L.message}><TextArea value={message} onChange={(e) => (setMessage(e.target.value), setErr(''))} placeholder={L.write_your_message} rows={5} max={1000} /></Field>
-        {err && <p className="mb-3 rounded-xl bg-danger/8 px-3.5 py-2.5 text-sm font-medium text-danger" role="alert">{err}</p>}
+        {err && <p className="mb-3 rounded-xl bg-danger/10 px-3.5 py-2.5 text-sm font-medium text-danger" role="alert">{err}</p>}
         <Button size="lg" type="submit">{L.submit}</Button>
-        <p className="mt-5 text-center text-xs text-muted">
-          {BRAND.supportEmail} · {BRAND.supportPhone}
-        </p>
+        <p className="mt-5 text-center text-xs text-faint">{BRAND.supportEmail} · {BRAND.supportPhone}</p>
       </form>
-    </div>
-  );
-}
-
-/** Policy pages (downloaded from the server each time in the real app). Open to everyone. */
-export function Policy() {
-  const { key = '' } = useParams();
-  const page = POLICIES[key as PolicyKey];
-  if (!page) return <Navigate to="/" replace />;
-  return (
-    <div className="min-h-app">
-      <Header title={page.title} back />
-      <article className="px-5 py-5">
-        <PolicyBody body={page.body} />
-      </article>
-    </div>
-  );
-}
-
-/** Notifications: title, description, time, photo (section 10). */
-export function Notifications() {
-  const nav = useNavigate();
-  const list = useDb((d) => d.notifications);
-  const users = useDb((d) => d.users);
-  const unread = list.some((n) => !n.read);
-  return (
-    <div className="min-h-app">
-      <Header title={L.notifications} back right={unread ? <Button size="sm" variant="ghost" onClick={markNotificationsRead}>{L.clear_all}</Button> : undefined} />
-      <ul className="divide-y divide-line">
-        {list.map((n) => {
-          const from = n.fromId ? users.find((u) => u.id === n.fromId) ?? null : null;
-          return (
-            <li key={n.id}>
-              <button onClick={() => (markNotificationsRead(), n.link && nav(n.link))} className={cn('flex w-full gap-3 px-4 py-3.5 text-left hover:bg-bg-soft', !n.read && 'bg-brand-light/60')}>
-                {from ? <Avatar user={from} size={46} /> : <span className="grid size-[46px] shrink-0 place-items-center rounded-full bg-brand-light text-brand"><Bell className="size-5" /></span>}
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-baseline justify-between gap-2">
-                    <span className="truncate font-semibold text-ink">{n.title}</span>
-                    <span className="shrink-0 text-xs text-muted">{timeAgo(n.createdAt)}</span>
-                  </span>
-                  <span className="mt-0.5 block text-sm text-muted">{n.body}</span>
-                </span>
-                {!n.read && <span className="mt-2 size-2.5 shrink-0 rounded-full bg-brand" aria-label="Unread" />}
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-      {!list.length && <Empty icon={<Bell className="size-7" />} title={L.no_data} />}
     </div>
   );
 }

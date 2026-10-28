@@ -7,7 +7,9 @@ export function useDb<T>(select: (d: Db) => T): T {
   return select(d);
 }
 
-export const useMe = () => useDb((d) => me(d));
+export function useMe() {
+  return useDb((d) => me(d));
+}
 
 export function cn(...xs: (string | false | null | undefined)[]) {
   return xs.filter(Boolean).join(' ');
@@ -22,16 +24,9 @@ export function timeAgo(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
-/** Local YYYY-MM-DD for a Date. */
-export const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-/** Parses YYYY-MM-DD as a local date (not UTC). */
-export const fromYmd = (s: string) => {
-  const [y, m, d] = s.split('-').map(Number);
-  return new Date(y, m - 1, d);
-};
-export const fmtDay = (s: string) => fromYmd(s).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
-/** "14:30" → "2:30 PM" */
-export function fmtClock(hhmm: string) {
-  const [h, m] = hhmm.split(':').map(Number);
-  return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+export function fmtDate(iso: string) {
+  return new Date(iso).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+}
+export function fmtTime(iso: string) {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }

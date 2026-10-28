@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { BRAND } from '@/config/brand';
 import { L, fill } from '@/data/labels';
-import { COLLEGES, DEMO_EMAIL, DEMO_OTP, DEMO_PASSWORD } from '@/data/mock';
+import { DEMO_EMAIL, DEMO_OTP, DEMO_PASSWORD } from '@/data/mock';
+import { COLLEGES, COLLEGE_CITIES } from '@/data/options';
 import { POLICIES } from '@/data/policies';
 import { Avatar, Button, Field, Input, Mark, PasswordInput, Sheet, ask, toast } from '@/components/ui';
 import { PolicyBody } from '@/components/policy';
@@ -51,7 +52,7 @@ export function Login() {
   const [err, setErr] = useState('');
   // Only redirect someone who arrives already signed in; a fresh log-in navigates itself.
   const [signedInOnArrival] = useState(!!user);
-  if (signedInOnArrival) return <Navigate to="/home" replace />;
+  if (signedInOnArrival) return <Navigate to="/discover" replace />;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,9 +122,10 @@ export function Login() {
 /** First-time pop-up with the full Terms of Service. */
 function TermsSheet({ open, onClose, onAccept }: { open: boolean; onClose: () => void; onAccept: () => void }) {
   const [tick, setTick] = useState(false);
+  const terms = useDb((d) => d.cms.terms);
   return (
     <Sheet open={open} onClose={onClose} title={L.terms_of_service}>
-      <PolicyBody body={POLICIES.terms.body} />
+      <PolicyBody body={terms} />
       <div className="sticky bottom-0 -mx-5 -mb-5 mt-4 border-t border-line bg-surface px-5 pb-4 pt-4">
         <button type="button" onClick={() => setTick((t) => !t)} className="mb-3 flex items-center gap-2.5 text-left text-sm font-medium" role="checkbox" aria-checked={tick}>
           <span className={cn('grid size-5 shrink-0 place-items-center rounded-md border-2', tick ? 'border-brand bg-brand text-white' : 'border-line-strong')}>{tick && <Check className="size-3.5" strokeWidth={3} />}</span>
@@ -398,11 +400,12 @@ export function SelectCollege() {
   const user = useMe();
   const eduAccepted = useDb((d) => d.device.eduAccepted);
   const [q, setQ] = useState('');
-  const [picked, setPicked] = useState(user?.collegeId ?? '');
+  const [picked, setPicked] = useState(user?.profile.college ?? '');
   const [err, setErr] = useState('');
   const list = useMemo(() => {
+    const all = COLLEGES.map((name, i) => ({ id: name, name, city: COLLEGE_CITIES[i] }));
     const t = q.trim().toLowerCase();
-    return t ? COLLEGES.filter((c) => `${c.name} ${c.city}`.toLowerCase().includes(t)) : COLLEGES;
+    return t ? all.filter((c) => `${c.name} ${c.city}`.toLowerCase().includes(t)) : all;
   }, [q]);
   if (!user) return <Navigate to="/login" replace />;
   return (
@@ -435,7 +438,7 @@ export function SelectCollege() {
           onClick={() => {
             if (!picked) return setErr(L.please_select_college);
             setCollege(picked);
-            nav(eduAccepted ? '/home' : '/educational-notice', { replace: true });
+            nav(eduAccepted ? '/discover' : '/educational-notice', { replace: true });
           }}
         >
           {L.done}
@@ -449,20 +452,21 @@ export function SelectCollege() {
 export function EducationalNotice() {
   const nav = useNavigate();
   const user = useMe();
+  const body = useDb((d) => d.cms.educational);
   if (!user) return <Navigate to="/login" replace />;
   return (
     <AuthLayout title={L.mentor_match_educational_purpose_only} back={false}>
       <div className="shadow-card rounded-3xl border border-line bg-surface p-5">
         <h2 className="mb-3 text-lg font-bold text-brand-dark">{POLICIES.educational.title}</h2>
         <div className="max-h-[52vh] overflow-y-auto overscroll-contain pr-1">
-          <PolicyBody body={POLICIES.educational.body} />
+          <PolicyBody body={body} />
         </div>
         <Button
           size="lg"
           className="mt-4"
           onClick={() => {
             acceptEducational();
-            nav('/home', { replace: true });
+            nav('/discover', { replace: true });
           }}
         >
           {L.ok}
