@@ -50,7 +50,7 @@ export function Notifications() {
           const from = users.find((u) => u.id === n.relatedId);
           return (
             <li key={n.id}>
-              <button onClick={() => { const t = target(n); if (t) nav(t); }} className={cn('flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-bg-soft', !n.read && 'bg-orange-fill/50')}>
+              <button onClick={() => { const t = target(n); if (t) nav(t); }} className={cn('flex w-full items-start gap-3 px-gutter py-3 text-left hover:bg-bg-soft', !n.read && 'bg-orange-fill/50')}>
                 {from ? <Avatar user={from} size={40} /> : <span className="grid size-10 shrink-0 place-items-center rounded-full bg-orange-fill text-orange-text [&_svg]:size-5">{ICONS[n.type]}</span>}
                 <span className="min-w-0 flex-1">
                   <span className="block font-semibold">{n.title}</span>
@@ -151,7 +151,7 @@ export function Settings() {
         <div className={group}>
           <Row icon={<UserPen />} label={L.edit_profile} to="/profile/edit" />
           {isMentorType(me.role) && <Row icon={<Clock />} label={L.set_availability} to="/availability" />}
-          {admin && <Row icon={<ShieldCheck />} label="Super Admin panel" sub="Users, branding, push, content" to="/admin" />}
+          {admin && <Row icon={<ShieldCheck />} label="Super Admin panel" sub="Admin only · Users, branding, push, content" to="/admin" />}
           <Row icon={<Ban />} label="Blocked members" to="/blocked" />
         </div>
         <SectionTitle>{L.notifications}</SectionTitle>
@@ -287,7 +287,7 @@ export function Blocked() {
       <Header title="Blocked members" back />
       <ul className="divide-y divide-line">
         {users.map((u) => (
-          <li key={u.id} className="flex items-center gap-3 px-4 py-3">
+          <li key={u.id} className="flex items-center gap-3 px-gutter py-3">
             <Avatar user={u} size={44} />
             <span className="flex-1 font-semibold">{fullName(u)}</span>
             <Button size="sm" variant="outline" onClick={() => { unblock(u.id); toast(`${u.profile.firstName} unblocked`); }}>{L.unblock}</Button>
@@ -329,7 +329,7 @@ export function ResetPassword() {
       <Header title={L.reset_password} back />
       <form
         noValidate
-        className="px-4 py-5"
+        className="px-gutter py-5"
         onSubmit={(e) => {
           e.preventDefault();
           if (!cur) return setErr(L.please_enter_current_password);
@@ -402,7 +402,7 @@ export function HelpSupport() {
       <Header title={L.help_and_support} back />
       <form
         noValidate
-        className="px-4 py-5"
+        className="px-gutter py-5"
         onSubmit={(e) => {
           e.preventDefault();
           if (!reason) return setErr(L.please_select_reason);

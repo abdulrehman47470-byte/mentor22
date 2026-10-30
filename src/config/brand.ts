@@ -27,8 +27,8 @@ export type BrandConfig = {
   /** The email verification code expires after this many seconds. */
   otpSeconds: number;
   backendUrl: string | null; // null = mock data (Phase 0)
-  /** adminForEveryone: demo only. Every signed-in account except Professionals can open Admin. Set false before launch. */
-  features: { calls: boolean; meetings: boolean; adminInApp: boolean; adminForEveryone: boolean };
+  /** Admin is only ever open to accounts on the Super Admin list (Admin → Members → Admin access). */
+  features: { calls: boolean; meetings: boolean; adminInApp: boolean };
 };
 
 /** Mentor & Match Student. Colours and logos come from the Android app (com.mentormatch.student). */
@@ -45,14 +45,14 @@ export const MM_STUDENT: BrandConfig = {
   mark: '/brand/mark-blue.svg',
   markWhite: '/brand/mark-white.svg',
   icon: '/icon-192.png',
-  colors: { primary: '#264672', primaryInk: '#FFFFFF', accent: '#3C6A97', accentText: '#3C6A97' },
+  colors: { primary: '#203d64', primaryInk: '#FFFFFF', accent: '#3C6A97', accentText: '#3C6A97' },
   supportEmail: 'support@mentorandmatch.com',
   supportPhone: '(310) 435-8447',
   crisisLine: { label: 'Suicide Prevention Hotline', phone: '988' },
   minPassword: 8,
   otpSeconds: 5 * 60,
   backendUrl: null,
-  features: { calls: true, meetings: true, adminInApp: true, adminForEveryone: true },
+  features: { calls: true, meetings: true, adminInApp: true },
 };
 
 export const BRAND = MM_STUDENT;

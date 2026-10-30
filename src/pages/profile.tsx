@@ -1,7 +1,7 @@
-import { Ban, Bell, BookOpen, CalendarPlus, Camera, Check, ChevronRight, Clock, Eye, EyeOff, FileText, Flag, HeartHandshake, LifeBuoy, Link2, LogOut, Mail, MessageCircle, MoreHorizontal, Pencil, Phone, Settings as SettingsIcon, Shield, ShieldCheck, Trash2, UserCheck, UserMinus, UserPlus, Video, X } from 'lucide-react';
+import { Ban, Bell, BookOpen, Briefcase, CalendarPlus, Camera, Check, ChevronRight, Clock, Eye, EyeOff, Flag, LifeBuoy, Link2, LogOut, Mail, MapPin, MessageCircle, MoreHorizontal, Pencil, Phone, Send, Settings as SettingsIcon, Shield, ShieldCheck, Trash2, UserCheck, UserMinus, UserPen, UserPlus, Video, X } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Avatar, Badge, Button, Card, ChipSingle, Empty, Field, Header, PoweredBy, SectionTitle, Sheet, TextArea, Toggle, toast, ask } from '@/components/ui';
+import { Avatar, Badge, Button, Card, ChipSingle, Empty, Field, Header, Mark, SectionTitle, Sheet, TextArea, Toggle, toast, ask } from '@/components/ui';
 import { BRAND } from '@/config/brand';
 import { L } from '@/data/labels';
 import { REPORT_REASONS } from '@/data/options';
@@ -95,14 +95,14 @@ function Hero({ user, children }: { user: User; children?: React.ReactNode }) {
         <div className="absolute inset-0 bg-gradient-to-b from-navy/10 via-navy/25 to-bg" />
       </div>
       <div className="-mt-16 rounded-full bg-bg p-1">{children ?? <Avatar user={user} size={112} ring />}</div>
-      <h1 className="mt-4 text-2xl font-extrabold tracking-tight">{fullName(user)}</h1>
+      <h1 className="mt-4 text-[22px] font-extrabold tracking-tight">{fullName(user)}</h1>
       {p.pronouns && <p className="text-sm text-faint">{p.pronouns}</p>}
       <div className="mt-2 flex flex-wrap justify-center gap-1.5">
         {p.classification && <Badge>{p.classification}</Badge>}
         {p.affiliation && <Badge tone="orange">{p.affiliation}</Badge>}
         {user.role === 'super_admin' && <Badge tone="red">Super Admin</Badge>}
       </div>
-      {p.college && <p className="mt-2 px-4 text-sm text-muted">{p.college}</p>}
+      {p.college && <p className="mt-2 px-gutter text-sm text-muted">{p.college}</p>}
     </div>
   );
 }
@@ -110,10 +110,12 @@ function Hero({ user, children }: { user: User; children?: React.ReactNode }) {
 // ---------- My profile ----------
 export function MyProfile() {
   const user = useMe()!;
+  const nav = useNavigate();
   const pendingMeetings = useDb((d) => d.meetings.filter((m) => m.invitee === d.sessionUserId && m.status === 'pending').length);
   const input = useRef<HTMLInputElement>(null);
   const pct = profileCompleteness(user.profile);
   const mentor = isMentorType(user.role);
+  const p = user.profile;
   const pick = (f?: File) => {
     if (!f) return;
     const img = new Image();
@@ -130,131 +132,197 @@ export function MyProfile() {
   return (
     <div>
       <Header title="Profile" />
-      <Hero user={user}>
-        <button className="relative" onClick={() => input.current?.click()} aria-label="Change photo">
-          <Avatar user={user} size={112} ring />
-          <span className="absolute bottom-0 right-0 grid size-9 place-items-center rounded-full bg-navy text-white"><Camera className="size-4" /></span>
-        </button>
-      </Hero>
-      <input ref={input} type="file" accept="image/*" hidden onChange={(e) => pick(e.target.files?.[0])} />
-      <div className="px-4 pb-6">
-        <Card className="mt-3">
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-semibold">Profile {pct}% complete</span>
-            <Link to="/profile/edit" className="font-semibold text-orange-text">{pct < 100 ? 'Finish it' : 'Edit'}</Link>
+      <input ref={input} type="file" accept="image/*" hidden onChange={(e) => (pick(e.target.files?.[0]), (e.target.value = ''))} />
+      <div className="px-gutter pb-6">
+        {/* Tapping the photo opens the full profile; the camera changes the photo. */}
+        <div className="flex flex-col items-center pt-6 text-center">
+          <div className="relative">
+            <button onClick={() => nav('/profile/view')} aria-label="See profile" className="rounded-full p-1 ring-2 ring-line-strong transition active:scale-[0.98]">
+              <Avatar user={user} size={132} />
+            </button>
+            <button onClick={() => input.current?.click()} aria-label="Change photo" className="absolute bottom-1 right-1 grid size-11 place-items-center rounded-full border-[3px] border-bg bg-navy text-white shadow-lg">
+              <Camera className="size-5" />
+            </button>
           </div>
-          <div className="mt-2 h-2 overflow-hidden rounded-full bg-bg-soft"><div className="brand-gradient h-full rounded-full" style={{ width: `${pct}%` }} /></div>
+          <h1 className="mt-4 text-[22px] font-extrabold uppercase tracking-tight text-navy">{fullName(user)}</h1>
+          {(p.profession || p.major) && (
+            <p className="mt-1 flex items-center gap-1.5 text-[15px] text-muted"><Briefcase className="size-4 shrink-0" /> {p.profession || p.major}</p>
+          )}
+          {p.college && <p className="mt-0.5 flex items-center gap-1.5 text-[15px] text-faint"><MapPin className="size-4 shrink-0" /> {p.college}</p>}
+          <div className="mt-2.5 flex flex-wrap justify-center gap-1.5">
+            {p.classification && <Badge>{p.classification}</Badge>}
+            {p.affiliation && <Badge tone="gray">{p.affiliation}</Badge>}
+            {user.role === 'super_admin' && <Badge tone="red">Super Admin</Badge>}
+          </div>
+          <Link to="/profile/view" className="mt-4 inline-flex h-10 items-center gap-2 rounded-full bg-brand-light px-5 text-[15px] font-semibold text-navy transition hover:bg-field">
+            <Eye className="size-4" /> See Profile
+          </Link>
+        </div>
+
+        <Card className="mt-6 p-5">
+          <div className="flex items-center justify-between text-[15px]">
+            <span className="font-semibold">Profile {pct}% complete</span>
+            <Link to="/profile/edit" className="font-semibold text-brand">{pct < 100 ? 'Finish It' : 'Edit'}</Link>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-bg-soft"><div className="brand-gradient h-full rounded-full" style={{ width: `${pct}%` }} /></div>
         </Card>
+
         <div className="mt-3 grid grid-cols-2 gap-3">
-          <Link to="/profile/edit"><Button variant="outline" className="w-full"><Pencil className="size-4" /> Edit profile</Button></Link>
+          <Link to="/profile/edit"><Button variant="outline" className="h-13 w-full"><Pencil className="size-4" /> Edit Profile</Button></Link>
           {mentor ? (
-            <Link to="/availability"><Button variant="outline" className="w-full"><Clock className="size-4" /> Availability</Button></Link>
+            <Link to="/availability"><Button variant="outline" className="h-13 w-full"><Clock className="size-4" /> Availability</Button></Link>
           ) : (
-            <Link to="/search"><Button variant="outline" className="w-full"><UserPlus className="size-4" /> Find mentors</Button></Link>
+            <Link to="/search"><Button variant="outline" className="h-13 w-full"><UserPlus className="size-4" /> Find Mentors</Button></Link>
           )}
         </div>
-        <Link to="/meetings">
-          <Card className="mt-3 flex items-center gap-3">
-            <span className="grid size-10 place-items-center rounded-xl bg-orange-fill text-orange-text"><CalendarPlus className="size-5" /></span>
-            <span className="flex-1"><span className="block font-semibold">My meetings</span><span className="text-xs text-faint">Upcoming, requests and booking</span></span>
-            {pendingMeetings > 0 && <Badge tone="orange">{pendingMeetings} new</Badge>}
+
+        <Link to="/meetings" className="mt-3 block">
+          <Card className="flex items-center gap-4 p-5">
+            <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-brand-light text-navy"><CalendarPlus className="size-6" /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[17px] font-semibold">My Meetings</span>
+              <span className="block text-sm text-muted">Upcoming, requests and booking</span>
+            </span>
+            {pendingMeetings > 0 && <Badge tone="gray">{pendingMeetings} new</Badge>}
           </Card>
         </Link>
-        {mentor && (
-          <Card className="mt-3 py-1">
-            <Toggle checked={user.profileVisible} onChange={(v) => { setProfileVisible(v); toast(v ? 'Your profile is visible' : 'Your profile is hidden'); }}
-              label="Show my profile" sub={user.profileVisible ? 'Mentees can find you in Discover and Search.' : 'Hidden: no new requests. Current connections stay.'} />
-          </Card>
-        )}
-        <ProfileSections user={user} />
+
+        <Card className="mt-3 px-5 py-2">
+          <Toggle
+            checked={user.profileVisible}
+            onChange={(v) => { setProfileVisible(v); toast(v ? 'Your profile is visible' : 'Your profile is hidden'); }}
+            label="Show Me in the Member Directory"
+            sub={user.profileVisible ? 'Members can find you in Discover and Search.' : 'Hidden: no new requests. Current connections stay.'}
+          />
+        </Card>
+
         <ControlCenter />
       </div>
     </div>
   );
 }
 
-function Row({ icon, label, sub, to, onClick, badge, danger }: { icon: React.ReactNode; label: string; sub?: string; to?: string; onClick?: () => void; badge?: number; danger?: boolean }) {
+/** Square shortcut tile in the Control Center grid. */
+function Tile({ icon, label, sub, to, onClick, badge }: { icon: React.ReactNode; label: string; sub: string; to?: string; onClick?: () => void; badge?: number }) {
   const nav = useNavigate();
   return (
-    <button type="button" onClick={() => (to ? nav(to) : onClick?.())} className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-bg-soft">
-      <span className={cn('grid size-9 shrink-0 place-items-center rounded-xl [&>svg]:size-[18px]', danger ? 'bg-danger/10 text-danger' : 'bg-orange-fill text-orange-text')}>{icon}</span>
-      <span className="min-w-0 flex-1">
-        <span className={cn('block text-[15px] font-medium', danger && 'text-danger')}>{label}</span>
-        {sub && <span className="block truncate text-xs text-faint">{sub}</span>}
-      </span>
-      {!!badge && <Badge tone="orange">{badge}</Badge>}
-      {!danger && <ChevronRight className="size-4 text-faint" />}
+    <button type="button" onClick={() => (to ? nav(to) : onClick?.())} className="shadow-card relative flex flex-col items-center rounded-2xl border border-line bg-surface px-1.5 py-4 text-center transition hover:border-line-strong active:scale-[0.98]">
+      {!!badge && <span className="absolute right-2 top-2 grid min-w-5 place-items-center rounded-full bg-navy px-1 text-[11px] font-bold text-white">{badge}</span>}
+      <span className="grid size-11 place-items-center rounded-xl bg-brand-light text-navy [&>svg]:size-5">{icon}</span>
+      <span className="mt-2.5 text-[14px] font-semibold leading-tight">{label}</span>
+      <span className="mt-0.5 line-clamp-1 text-xs text-muted">{sub}</span>
     </button>
   );
 }
 
-/** All settings and the Admin panel, in one simple list at the bottom of the profile. */
+/** Settings, shortcuts and (for Super Admins) the Admin panel, at the bottom of the profile. */
 function ControlCenter() {
   const nav = useNavigate();
   const me = useMe()!;
   const push = useDb((d) => d.pushEnabled);
   const unread = useDb((d) => d.notifications.filter((n) => n.userId === d.sessionUserId && !n.read).length);
+  const blocked = useDb((d) => d.blocks.filter((b) => b.userId === d.sessionUserId).length);
   const admin = useDb((d) => isAdmin(d));
   const openReports = useDb((d) => d.reports.filter((r) => (r.status ?? 'open') === 'open').length);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const group = 'divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface';
+  const pct = profileCompleteness(me.profile);
+  const mentor = isMentorType(me.role);
   return (
-    <section aria-label="Settings">
-      {admin && (<>
-      <SectionTitle>Admin</SectionTitle>
-      <Link to="/admin" className="navy-gradient flex items-center gap-3 rounded-2xl p-4 text-white shadow-premium active:scale-[0.99]">
-        <span className="grid size-11 place-items-center rounded-xl bg-orange text-white"><ShieldCheck className="size-6" /></span>
-        <span className="flex-1">
-          <span className="block font-semibold">Admin panel</span>
-          <span className="block text-xs text-white/70">Members, matches, reports, push, content</span>
-        </span>
-        {openReports > 0 && <span className="rounded-full bg-danger px-2 py-0.5 text-xs font-bold">{openReports}</span>}
-        <ChevronRight className="size-5 text-white/70" />
-      </Link>
-      </>)}
-
-      <SectionTitle>Settings</SectionTitle>
-      <div className={group}>
-        <Row icon={<Pencil />} label="Edit profile" to="/profile/edit" />
-        {isMentorType(me.role) && <Row icon={<Clock />} label="My availability" to="/availability" />}
-        <Row icon={<UserPlus />} label="Send invites" sub={isMentorType(me.role) ? 'Invite mentees to connect' : 'Invite mentors to connect'} to="/invite" />
-        <Row icon={<CalendarPlus />} label="My meetings" to="/meetings" />
-        <Row icon={<Bell />} label="Notifications" to="/notifications" badge={unread} />
-        <div className="px-4">
-          <Toggle checked={push} onChange={async (v) => {
-            setPushEnabled(v);
-            if (v) {
-              const r = await askPushPermission();
-              toast(r === 'granted' ? 'Push notifications on' : 'In-app notifications on');
-            } else toast('Push notifications off');
-          }} label="Push notifications" sub="Requests, messages, meetings and calls" />
+    <section aria-label="Settings" className="mt-8">
+      <div className="navy-gradient shadow-premium relative overflow-hidden rounded-3xl p-5 text-white">
+        <span className="pointer-events-none absolute -right-10 -top-16 size-44 rounded-full bg-white/5" aria-hidden />
+        <div className="relative flex items-center gap-3">
+          <span className="grid size-12 place-items-center rounded-2xl bg-white/12"><SettingsIcon className="size-6" /></span>
+          <span className="flex-1">
+            <span className="block text-[11px] font-bold uppercase tracking-[0.2em] text-white/75">Control Center</span>
+            <span className="block text-[20px] font-bold leading-tight">Settings &amp; More</span>
+          </span>
+          <Link to="/settings" className="flex items-center gap-1 rounded-full bg-white/12 px-3.5 py-1.5 text-sm font-semibold hover:bg-white/20">All <ChevronRight className="size-4" /></Link>
+        </div>
+        <div className="relative mt-4 flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-1">
+          <Bell className="size-5 shrink-0" />
+          <div className="flex-1 [&_.text-faint]:text-white/70">
+            <Toggle checked={push} onChange={async (v) => {
+              setPushEnabled(v);
+              if (v) {
+                const r = await askPushPermission();
+                toast(r === 'granted' ? 'Push notifications on' : 'In-app notifications on');
+              } else toast('Push notifications off');
+            }} label="Push Notifications" sub="Requests, messages, meetings and calls" />
+          </div>
         </div>
       </div>
 
-      <SectionTitle>Help & safety</SectionTitle>
-      <div className={group}>
-        <Row icon={<BookOpen />} label="Resources" to="/resources" />
-        <Row icon={<HeartHandshake />} label="Community guidelines" to="/legal/guidelines" />
-        <Row icon={<Ban />} label="Blocked members" to="/blocked" />
-        <Row icon={<LifeBuoy />} label={BRAND.crisisLine.label} sub={`Call or text ${BRAND.crisisLine.phone}, 24/7`} onClick={() => (window.location.href = `tel:${BRAND.crisisLine.phone}`)} />
-        <Row icon={<Mail />} label="Contact support" sub={BRAND.supportEmail} onClick={() => (window.location.href = `mailto:${BRAND.supportEmail}`)} />
-        <Row icon={<FileText />} label="Terms of Use" to="/legal/terms" />
-        <Row icon={<Shield />} label="Privacy Policy" to="/legal/privacy" />
+      <Link to="/invite" className="shadow-card mt-3 flex items-center gap-4 rounded-2xl border border-line bg-bg-soft p-5 transition hover:border-line-strong">
+        <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-surface text-navy shadow-card"><Send className="size-5" /></span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[17px] font-semibold">Send an Invite</span>
+          <span className="block text-sm text-muted">{mentor ? 'Invite mentees to connect' : 'Invite mentors to connect'}, or a colleague by email</span>
+        </span>
+        <ChevronRight className="size-5 shrink-0 text-faint" />
+      </Link>
+
+      {admin && (
+        <Link to="/admin" className="shadow-card mt-3 flex items-center gap-4 rounded-2xl border border-line bg-surface p-5 transition hover:border-line-strong">
+          <span className="navy-gradient grid size-12 shrink-0 place-items-center rounded-2xl text-white"><ShieldCheck className="size-6" /></span>
+          <span className="min-w-0 flex-1">
+            <span className="mb-1 inline-block rounded-full bg-navy px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">Admin only</span>
+            <span className="block text-[17px] font-semibold">Admin Console</span>
+            <span className="block text-sm text-muted">Members, matches, reports, push, content</span>
+          </span>
+          {openReports > 0 && <span className="rounded-full bg-danger px-2 py-0.5 text-xs font-bold text-white">{openReports}</span>}
+          <ChevronRight className="size-5 shrink-0 text-faint" />
+        </Link>
+      )}
+
+      <div className="mt-3 grid grid-cols-3 gap-3">
+        <Tile icon={<UserPen />} label="Edit Profile" sub={`${pct}% complete`} to="/profile/edit" />
+        {mentor
+          ? <Tile icon={<Clock />} label="Availability" sub="Your free slots" to="/availability" />
+          : <Tile icon={<CalendarPlus />} label="Meetings" sub="Upcoming" to="/meetings" />}
+        <Tile icon={<Bell />} label="Notifications" sub={unread ? `${unread} unread` : 'All caught up'} to="/notifications" badge={unread} />
+        <Tile icon={<BookOpen />} label="Resources" sub="College & help" to="/resources" />
+        <Tile icon={<Ban />} label="Blocked" sub={blocked ? `${blocked} member${blocked > 1 ? 's' : ''}` : 'No one'} to="/blocked" />
+        <Tile icon={<Shield />} label="Privacy" sub="Terms & policy" to="/legal/privacy" />
       </div>
 
-      <div className={cn(group, 'mt-5')}>
-        <Row icon={<LogOut />} label={L.sign_out} danger onClick={async () => {
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <button type="button" onClick={() => (window.location.href = `mailto:${BRAND.supportEmail}`)} className="shadow-card flex min-w-0 items-center gap-3 rounded-2xl border border-line bg-surface p-4 text-left hover:border-line-strong">
+          <Mail className="size-5 shrink-0 text-navy" />
+          <span className="min-w-0"><span className="block font-semibold">Support</span><span className="block truncate text-xs text-muted">{BRAND.supportEmail}</span></span>
+        </button>
+        <button type="button" onClick={() => (window.location.href = `tel:${BRAND.crisisLine.phone}`)} className="shadow-card flex min-w-0 items-center gap-3 rounded-2xl border border-line bg-surface p-4 text-left hover:border-line-strong">
+          <LifeBuoy className="size-5 shrink-0 text-navy" />
+          <span className="min-w-0"><span className="block truncate font-semibold" title={BRAND.crisisLine.label}>Crisis Line</span><span className="block truncate text-xs text-muted">Call or text {BRAND.crisisLine.phone}</span></span>
+        </button>
+      </div>
+
+      <div className="mt-3 flex justify-center gap-4 text-sm font-medium text-muted">
+        <Link to="/legal/guidelines" className="hover:text-navy">Community guidelines</Link>
+        <span aria-hidden>·</span>
+        <Link to="/legal/terms" className="hover:text-navy">Terms of Use</Link>
+      </div>
+
+      <button
+        type="button"
+        onClick={async () => {
           if ((await ask({ message: L.are_you_sure_you_want_to_logout_q, danger: true, confirm: L.sign_out })) === null) return;
           signOut();
           toast(L.logout_successfully);
           nav('/welcome', { replace: true });
-        }} />
-        <Row icon={<Trash2 />} label="Delete account" danger onClick={() => setConfirmDelete(true)} />
-      </div>
+        }}
+        className="mt-5 flex h-13 w-full items-center justify-center gap-2 rounded-2xl border border-danger/30 bg-surface text-[15px] font-semibold text-danger hover:bg-danger/5"
+      >
+        <LogOut className="size-5" /> {L.sign_out}
+      </button>
+      <button type="button" onClick={() => setConfirmDelete(true)} className="mx-auto mt-3 flex items-center gap-1.5 text-sm font-medium text-faint hover:text-danger">
+        <Trash2 className="size-4" /> Delete account
+      </button>
 
       <div className="mt-8 flex flex-col items-center gap-1 text-center">
-        <p className="text-xs font-semibold text-faint">{BRAND.appName} · v0.1.0 (prototype)</p>
-        <PoweredBy className="mt-3" />
+        <Mark size={34} />
+        <p className="mt-2 text-sm font-semibold text-navy">{BRAND.appName} · v0.1.0 (prototype)</p>
+        <p className="text-xs text-faint">Powered by Mentor &amp; Match</p>
       </div>
       <Sheet open={confirmDelete} onClose={() => setConfirmDelete(false)} title="Delete account?">
         <p className="text-muted">This permanently removes your profile, connections and messages. This can’t be undone.</p>
@@ -264,6 +332,28 @@ function ControlCenter() {
         </div>
       </Sheet>
     </section>
+  );
+}
+
+// ---------- See Profile: my profile as others see it ----------
+export function MyProfileView() {
+  const user = useMe()!;
+  const nav = useNavigate();
+  return (
+    <div className="pb-28">
+      <Header title="My Profile" back="/profile" right={
+        <Link to="/profile/edit" className="flex items-center gap-1.5 rounded-full bg-brand-light px-3.5 py-2 text-sm font-semibold text-navy"><Pencil className="size-4" /> Edit</Link>
+      } />
+      <Hero user={user} />
+      <div className="px-gutter">
+        <p className="mt-2 text-center text-xs text-faint">This is how other members see your profile.</p>
+        <PhotoStrip user={user} />
+        <ProfileSections user={user} />
+      </div>
+      <div className="fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-[430px] gap-3 border-t border-line bg-surface px-gutter pb-[max(12px,env(safe-area-inset-bottom))] pt-3">
+        <Button className="flex-1" onClick={() => nav('/profile/edit')}><Pencil className="size-4" /> Edit Profile</Button>
+      </div>
+    </div>
   );
 }
 
@@ -282,7 +372,7 @@ export function MemberProfile() {
     <div className="pb-28">
       <Header title={fullName(user)} back right={<button aria-label="More" onClick={() => setMenu(true)} className="grid size-10 place-items-center rounded-full hover:bg-bg-soft"><MoreHorizontal className="size-5" /></button>} />
       <Hero user={user} />
-      <div className="px-4">
+      <div className="px-gutter">
         {status === 3 && (
           <div className="mt-3 grid grid-cols-4 gap-2">
             <Action icon={<MessageCircle />} label="Message" onClick={() => nav(`/messages/${id}`)} />
@@ -295,7 +385,7 @@ export function MemberProfile() {
         <ProfileSections user={user} />
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-[430px] gap-3 border-t border-line bg-surface px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3">
+      <div className="fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-[430px] gap-3 border-t border-line bg-surface px-gutter pb-[max(12px,env(safe-area-inset-bottom))] pt-3">
         {status === 0 && <Button className="flex-1" variant="accent" onClick={() => { sendRequest(id); toast(`Request sent to ${name}`); }}><UserPlus className="size-5" /> Send mentoring request</Button>}
         {status === 1 && <Button className="flex-1" variant="outline" onClick={() => { cancelRequest(id); toast('Request withdrawn'); }}><Clock className="size-5" /> Requested · Withdraw</Button>}
         {status === 2 && (
@@ -327,7 +417,7 @@ function PhotoStrip({ user }: { user: User }) {
   return (
     <>
       <SectionTitle>Photos</SectionTitle>
-      <div className="no-scrollbar -mx-4 flex snap-x gap-2 overflow-x-auto px-4">
+      <div className="no-scrollbar -mx-gutter flex snap-x gap-2 overflow-x-auto px-gutter">
         {photos.map((src, i) => (
           <button key={src} onClick={() => setOpen(i)} className="h-32 w-44 shrink-0 snap-start overflow-hidden rounded-2xl">
             <img loading="lazy" decoding="async" src={src} alt="" className="size-full object-cover transition hover:scale-105" />

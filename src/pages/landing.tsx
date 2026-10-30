@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { BRAND } from '@/config/brand';
 import { Mark } from '@/components/ui';
@@ -10,30 +10,33 @@ export function Start() {
   return <Navigate to={user ? '/discover' : '/welcome'} replace />;
 }
 
-/** Branded loading screen, shown once each time the app is opened. Short, so it never slows anyone down. */
+/**
+ * Fades out the loading screen from index.html (shown on every visit and refresh) once the first screen is ready.
+ * It stays up at least half a second from the start of the load, so the logo reads as a splash, not a flicker.
+ */
 export function BootSplash() {
-  const [phase, setPhase] = useState<'in' | 'out' | 'gone'>(() => (sessionStorage.getItem('mm-booted') ? 'gone' : 'in'));
   useEffect(() => {
-    if (phase === 'gone') return;
-    sessionStorage.setItem('mm-booted', '1');
-    const a = setTimeout(() => setPhase('out'), 900);
-    const b = setTimeout(() => setPhase('gone'), 1250);
+    const el = document.getElementById('boot');
+    if (!el) return;
+    const wait = Math.max(0, 500 - performance.now());
+    const a = setTimeout(() => el.classList.add('out'), wait);
+    const b = setTimeout(() => el.remove(), wait + 300);
     return () => {
       clearTimeout(a);
       clearTimeout(b);
     };
-  }, [phase === 'gone']);
-  if (phase === 'gone') return null;
+  }, []);
+  return null;
+}
+
+/** Same look as the loading screen, for the rare moment a page is still downloading. */
+export function BrandLoader() {
   return (
-    <div
-      className={`fixed inset-0 z-[100] grid place-items-center bg-gradient-to-b from-brand-dark to-brand transition-opacity duration-300 ${phase === 'out' ? 'pointer-events-none opacity-0' : ''}`}
-      role="status"
-      aria-label={`Loading ${BRAND.appName}`}
-    >
-      <div className="splash-in relative grid size-48 place-items-center">
+    <div className="grid min-h-app place-items-center bg-gradient-to-b from-brand-dark to-brand" role="status" aria-label={`Loading ${BRAND.appName}`}>
+      <div className="relative grid size-48 place-items-center">
         <span className="ring-wave absolute inset-0 rounded-full border border-white/40" aria-hidden />
         <div className="grid size-48 place-items-center rounded-full bg-white shadow-[0_24px_50px_rgba(5,15,35,0.35)]">
-          <img src={BRAND.logo} alt={BRAND.appName} width={132} height={83} fetchPriority="high" />
+          <img src={BRAND.logo} alt="" width={116} height={73} />
         </div>
       </div>
     </div>
@@ -53,17 +56,6 @@ export function Welcome() {
         <i className="band b1" />
         <i className="band b2" />
       </div>
-      <header>
-        <div className="brandmark">
-          <i>
-            <Mark size={20} />
-          </i>
-          {BRAND.shortName}
-        </div>
-        <button className="signin" onClick={logIn}>
-          Sign In
-        </button>
-      </header>
       <div className="hero">
         <div className="halo">
           <div className="circle">

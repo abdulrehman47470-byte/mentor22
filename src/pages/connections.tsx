@@ -47,7 +47,7 @@ export function Connections() {
   return (
     <div>
       <Header title="Connections" right={<Link to="/invite" className="brand-gradient flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-semibold text-white"><UserPlus className="size-4" /> {L.invite}</Link>} />
-      <div className="sticky top-14 z-20 flex gap-1 border-b border-line bg-surface px-4 py-2">
+      <div className="sticky top-14 z-20 flex gap-1 border-b border-line bg-surface px-gutter py-2">
         {([['received', 'Requests', received.length], ['sent', 'Sent', sent.length], ['connected', 'Connected', connected.length]] as const).map(([k, label, n]) => (
           <button key={k} onClick={() => setTab(k)} className={cn('flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-sm font-semibold', tab === k ? 'bg-navy text-white' : 'text-faint')}>
             {label}
@@ -57,7 +57,7 @@ export function Connections() {
       </div>
       <ul className="divide-y divide-line">
         {list.map(({ c, other }) => (
-          <li key={c.id} className="flex items-center gap-3 px-4 py-3">
+          <li key={c.id} className="flex items-center gap-3 px-gutter py-3">
             <Link to={`/member/${other.id}`} className="flex min-w-0 flex-1 items-center gap-3">
               <Avatar user={other} size={52} />
               <Info user={other} c={c} />

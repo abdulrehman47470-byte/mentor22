@@ -798,7 +798,7 @@ function TemplateCard({ t, sent, branding, className }: { t: EmailTemplate; sent
       <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
         <div className="flex flex-col items-center gap-1 py-3">
           <img loading="lazy" decoding="async" src={branding.logo} alt="" className="h-9 object-contain" />
-          <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#264672]">{BRAND.appName}</span>
+          <span className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#203d64]">{BRAND.appName}</span>
         </div>
         <div className="border-t-2 px-4 py-2.5 text-[13px] font-bold text-white" style={{ background: `linear-gradient(180deg, ${branding.primary}, ${branding.primary}dd)`, borderColor: branding.accent }}>{t.headline}</div>
         <div className="h-4 bg-gradient-to-b from-white to-transparent" />
@@ -976,7 +976,7 @@ function BrandedEmail({ b, headline, to, subject, body }: { b: EmailBranding; he
     <div className="overflow-hidden rounded-2xl border border-line bg-[#f4f5f7] p-3 text-[14px]">
       <p className="mb-2 truncate text-xs text-faint">To: {to} · <b>{subject}</b></p>
       <div className="overflow-hidden rounded-xl bg-white">
-        <div className="flex flex-col items-center gap-1 py-4"><img loading="lazy" decoding="async" src={b.logo} alt="" className="h-12 object-contain" /><span className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#264672]">{BRAND.appName}</span></div>
+        <div className="flex flex-col items-center gap-1 py-4"><img loading="lazy" decoding="async" src={b.logo} alt="" className="h-12 object-contain" /><span className="text-[9px] font-bold uppercase tracking-[0.25em] text-[#203d64]">{BRAND.appName}</span></div>
         <div className="border-t-2 px-5 py-3 font-bold text-white" style={{ background: b.primary, borderColor: b.accent }}>{headline}</div>
         <div className="whitespace-pre-line p-5 leading-relaxed text-[#222]">{body}</div>
         <div className="px-5 pb-5 text-center"><span className="inline-block rounded-full px-5 py-2.5 font-semibold text-white" style={{ background: b.accent }}>Open {BRAND.appName}</span></div>
@@ -1139,7 +1139,6 @@ function TeamTab() {
         <div className="flex-1"><UserPick value={pick} onChange={setPick} users={d.users.filter((u) => !d.adminIds.includes(u.id) && u.role !== 'professional')} placeholder="Choose a member…" /></div>
         <Button disabled={!pick} onClick={() => { setAdminAccess(pick, true); setPick(''); toast('Admin added'); }}><Plus className="size-4" /> Add</Button>
       </div>
-      {BRAND.features.adminForEveryone && <p className="mt-3 rounded-2xl bg-orange-fill p-3 text-xs text-orange-text">Demo mode: every account except Professionals can open this console. Turn off <code>adminForEveryone</code> in brand.ts before launch.</p>}
     </>
   );
 }

@@ -245,13 +245,13 @@ export function IncomingCall() {
         <span className="ring-wave absolute size-36 rounded-full border-2 border-white/30 [animation-delay:.7s]" />
         <Avatar user={from} size={144} />
       </div>
-      <h1 className="font-display relative mt-8 text-3xl font-extrabold">{fullName(from)}</h1>
+      <h1 className="font-display relative mt-8 text-center text-[29px] font-extrabold leading-tight">{fullName(from)}</h1>
       <p className="relative mt-1 text-white/70">{from.profile.classification} · {from.profile.affiliation}</p>
       <div className="relative mt-auto flex w-full justify-around">
-        <button onClick={() => { answerIncoming(false); toast('Call declined'); }} className="flex flex-col items-center gap-2 text-sm">
+        <button onClick={() => { answerIncoming(false); toast('Call declined'); }} className="flex flex-col items-center gap-2 text-[15px] font-medium">
           <span className="grid size-16 place-items-center rounded-full bg-danger shadow-lg"><PhoneOff className="size-7" /></span>Decline
         </button>
-        <button onClick={() => { answerIncoming(true); nav(`/call/${from.id}?incoming=1${inc.kind === 'video' ? '&video=1' : ''}`); }} className="flex flex-col items-center gap-2 text-sm">
+        <button onClick={() => { answerIncoming(true); nav(`/call/${from.id}?incoming=1${inc.kind === 'video' ? '&video=1' : ''}`); }} className="flex flex-col items-center gap-2 text-[15px] font-medium">
           <span className="grid size-16 animate-bounce place-items-center rounded-full bg-success shadow-lg">{inc.kind === 'video' ? <Video className="size-7" /> : <Phone className="size-7" />}</span>Accept
         </button>
       </div>

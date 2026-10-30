@@ -41,10 +41,10 @@ const FILTERS: { id: 'all' | PostKind | 'saved'; label: string }[] = [
 ];
 
 export const STORY_THEMES = [
-  'linear-gradient(150deg,#264672 0%,#2F5A84 55%,#3C6A97 140%)',
+  'linear-gradient(150deg,#203d64 0%,#2a527c 55%,#3C6A97 140%)',
   'linear-gradient(150deg,#3C6A97 0%,#5A86B1 50%,#E0457B 120%)',
-  'linear-gradient(150deg,#0F4C5C 0%,#2F5A84 70%)',
-  'linear-gradient(150deg,#5A2D82 0%,#264672 100%)',
+  'linear-gradient(150deg,#0F4C5C 0%,#2a527c 70%)',
+  'linear-gradient(150deg,#5A2D82 0%,#203d64 100%)',
 ];
 
 const greeting = () => {

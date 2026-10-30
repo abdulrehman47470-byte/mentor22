@@ -59,7 +59,7 @@ export function Meetings() {
   return (
     <div>
       <Header title="Meetings" back right={<Link to="/availability" className="mr-1 text-sm font-semibold text-orange-text">{L.set_availability}</Link>} />
-      <div className="px-4 py-4">
+      <div className="px-gutter py-4">
         <Button size="lg" variant="accent" onClick={() => (connections.length ? setPick(true) : toast(L.please_select_your_connection))}>
           <CalendarPlus className="size-5" /> {L.schedule_meeting}
         </Button>
@@ -208,7 +208,7 @@ export function NewMeeting() {
   return (
     <div className="pb-28">
       <Header title={L.schedule_meeting} sub={`${L.ics_meeting_with} ${fullName(other)}`} back />
-      <div className="px-4 py-4">
+      <div className="px-gutter py-4">
         {mentor && (
           <>
             <SectionTitle>{other.profile.firstName}’s free times</SectionTitle>
@@ -243,7 +243,7 @@ export function NewMeeting() {
         <Field label={L.meeting_reason} required><Select value={reason} onChange={(v) => { setReason(v); setErr(''); }} options={MEETING_REASONS} placeholder={L.select_reason} /></Field>
         <Field label={L.notes}><TextArea value={note} onChange={(e) => setNote(e.target.value)} max={300} rows={3} placeholder={L.type_here} /></Field>
       </div>
-      <div className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-[480px] border-t border-line bg-surface px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3">
+      <div className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-[480px] border-t border-line bg-surface px-gutter pb-[max(12px,env(safe-area-inset-bottom))] pt-3">
         {err && <p className="mb-2 rounded-xl bg-danger/10 px-3.5 py-2 text-sm font-medium text-danger" role="alert">{err}</p>}
         <Button size="lg" onClick={submit}>{L.schedule_meeting}</Button>
       </div>
@@ -262,7 +262,7 @@ export function Availability() {
   return (
     <div>
       <Header title={L.set_availability} back right={<button onClick={() => setOpen(true)} aria-label={L.add_new} className="grid size-10 place-items-center rounded-full hover:bg-bg-soft"><Plus className="size-5" /></button>} />
-      <div className="px-4 py-4">
+      <div className="px-gutter py-4">
         <p className="mb-3 text-sm text-muted">
           {mentor ? 'Mentees book these times from your profile.' : 'Let your mentors know when you can meet.'} General availability: <b>{me.profile.availability.join(', ') || 'not set'}</b>.
         </p>
@@ -271,7 +271,7 @@ export function Availability() {
         {slots.length ? (
           <ul className="divide-y divide-line rounded-2xl border border-line">
             {slots.map((s) => (
-              <li key={s.id} className="flex items-center gap-3 px-4 py-3">
+              <li key={s.id} className="flex items-center gap-3 px-gutter py-3">
                 <Clock className="size-4 text-orange-text" />
                 <span className="flex-1 text-[15px]">{fmtDate(s.start)} · {fmtTime(s.start)}–{fmtTime(s.end)}</span>
                 <button aria-label={L.are_you_sure_you_want_to_delete} onClick={async () => { if ((await ask({ message: L.are_you_sure_you_want_to_delete, danger: true })) !== null) { removeSlot(s.id); toast('Slot removed'); } }} className="grid size-9 place-items-center rounded-full text-muted hover:bg-bg-soft"><Trash2 className="size-4" /></button>

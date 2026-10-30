@@ -15,10 +15,11 @@ export function Button({ variant = 'primary', size = 'md', className, ...p }: Bu
     <button
       {...p}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-full font-semibold transition active:scale-[0.98] disabled:opacity-45 disabled:pointer-events-none',
-        size === 'sm' && 'h-9 px-4 text-sm',
+        'items-center justify-center gap-2 rounded-full font-semibold transition active:scale-[0.98] disabled:opacity-45 disabled:pointer-events-none',
+        size === 'lg' ? 'mx-auto flex w-full max-w-[300px]' : 'inline-flex',
+        size === 'sm' && 'h-9 px-4 text-[15px]',
         size === 'md' && 'h-11 px-5 text-[15px]',
-        size === 'lg' && 'h-13 px-6 text-base w-full',
+        size === 'lg' && 'h-13 px-6 text-[15px]',
         variant === 'primary' && 'bg-navy text-white shadow-[0_8px_20px_-10px_rgba(38,70,114,0.7)] hover:bg-navy-2',
         variant === 'accent' && 'brand-gradient text-white shadow-[0_10px_24px_-10px_rgba(60,106,151,0.8)] hover:brightness-110',
         variant === 'outline' && 'border border-line-strong bg-surface text-navy hover:bg-bg-soft',
@@ -36,14 +37,14 @@ export function Header({ title, back, right, sub }: { title: ReactNode; back?: b
   const nav = useNavigate();
   return (
     <header className="sticky top-0 z-30 border-b border-line/70 bg-surface/80 backdrop-blur-xl backdrop-saturate-150">
-      <div className="flex h-14 items-center gap-2 px-4">
+      <div className="flex h-14 items-center gap-2 px-gutter">
         {back && (
-          <button aria-label="Back" onClick={() => (typeof back === 'string' ? nav(back) : nav(-1))} className="-ml-2 grid size-10 place-items-center rounded-full hover:bg-bg-soft">
+          <button aria-label="Back" onClick={() => (typeof back === 'string' ? nav(back) : nav(-1))} className="-ml-2.5 grid size-10 place-items-center rounded-full hover:bg-bg-soft">
             <ChevronLeft className="size-6" />
           </button>
         )}
         <div className="min-w-0 flex-1">
-          <h1 className="font-display truncate text-[17px] font-bold">{title}</h1>
+          <h1 className="font-display truncate text-[18px] font-bold">{title}</h1>
           {sub && <p className="truncate text-xs text-faint">{sub}</p>}
         </div>
         {right}
@@ -53,7 +54,7 @@ export function Header({ title, back, right, sub }: { title: ReactNode; back?: b
 }
 
 export function Page({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn('px-4 py-4', className)}>{children}</div>;
+  return <div className={cn('px-gutter py-4', className)}>{children}</div>;
 }
 
 export function Card({ children, className, onClick }: { children: ReactNode; className?: string; onClick?: () => void }) {
@@ -91,7 +92,7 @@ export function Mark({ size = 20, white, className }: { size?: number; white?: b
 }
 
 // ---------- Avatar ----------
-const AVATAR_BG = ['#264672', '#3C6A97', '#2F5A84', '#4B7BAA', '#1F3D63', '#5A86B1'];
+const AVATAR_BG = ['#203d64', '#3C6A97', '#2a527c', '#4B7BAA', '#1F3D63', '#5A86B1'];
 export function Avatar({ user, size = 44, ring }: { user: Pick<User, 'id' | 'photo' | 'profile'>; size?: number; ring?: boolean }) {
   const initials = `${user.profile.firstName[0] ?? '?'}${user.profile.lastName[0] ?? ''}`.toUpperCase();
   const bg = AVATAR_BG[[...user.id].reduce((a, c) => a + c.charCodeAt(0), 0) % AVATAR_BG.length];

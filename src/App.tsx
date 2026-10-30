@@ -2,7 +2,7 @@ import { Suspense, lazy, useEffect, type ComponentType, type JSX } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AppShell, Frame, RequireAdmin, RequireMember } from '@/components/shell';
 import { DialogHost, Offline, Toaster, UpdateBanner } from '@/components/ui';
-import { BootSplash, Start, Welcome } from '@/pages/landing';
+import { BootSplash, BrandLoader, Start, Welcome } from '@/pages/landing';
 import { IncomingCall, LiveRoomPage } from '@/pages/calls';
 
 const preloads: (() => Promise<unknown>)[] = [];
@@ -41,6 +41,7 @@ const Discover = page(home, 'Discover');
 const Search = page(home, 'Search');
 const MemberProfile = page(profile, 'MemberProfile');
 const MyProfile = page(profile, 'MyProfile');
+const MyProfileView = page(profile, 'MyProfileView');
 const Connections = page(() => import('@/pages/connections'), 'Connections');
 const Chat = page(messages, 'Chat');
 const Messages = page(messages, 'Messages');
@@ -73,14 +74,6 @@ function ScrollTop() {
   return null;
 }
 
-function Spinner() {
-  return (
-    <div className="grid min-h-app place-items-center" role="status" aria-label="Loading">
-      <span className="size-8 animate-spin rounded-full border-[3px] border-brand-light border-t-brand" />
-    </div>
-  );
-}
-
 export function App() {
   useEffect(() => {
     const idle = window.requestIdleCallback ?? ((cb: () => void) => setTimeout(cb, 300));
@@ -90,7 +83,7 @@ export function App() {
     <BrowserRouter>
       <Frame>
         <ScrollTop />
-        <Suspense fallback={<Spinner />}>
+        <Suspense fallback={<BrandLoader />}>
           <Routes>
             <Route path="/" element={<Start />} />
             <Route path="/welcome" element={<Welcome />} />
@@ -126,6 +119,7 @@ export function App() {
             <Route path="/room/:id" element={member(<LiveRoomPage />)} />
             <Route path="/meetings/new/:id" element={member(<NewMeeting />)} />
             <Route path="/availability" element={member(<Availability />)} />
+            <Route path="/profile/view" element={member(<MyProfileView />)} />
             <Route path="/profile/edit" element={member(<ProfileWizard mode="edit" />)} />
             <Route path="/notifications" element={member(<Notifications />)} />
             <Route path="/settings" element={member(<Settings />)} />

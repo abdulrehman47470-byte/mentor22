@@ -65,7 +65,7 @@ export function ProfileWizard({ mode }: { mode: 'setup' | 'edit' }) {
         back={mode === 'edit' ? true : undefined}
       />
       {/* Section tabs */}
-      <div className="sticky top-14 z-20 flex gap-1 border-b border-line bg-surface px-4 py-2">
+      <div className="sticky top-14 z-20 flex gap-1 border-b border-line bg-surface px-gutter py-2">
         {STEPS.map((s, idx) => (
           <button
             key={s}
@@ -81,7 +81,7 @@ export function ProfileWizard({ mode }: { mode: 'setup' | 'edit' }) {
         ))}
       </div>
 
-      <div className="fade-up px-4 py-5" key={step}>
+      <div className="fade-up px-gutter py-5" key={step}>
         {step === L.basic_info && (
           <>
             <div className="grid grid-cols-2 gap-3">
@@ -274,7 +274,7 @@ export function ProfileWizard({ mode }: { mode: 'setup' | 'edit' }) {
         )}
       </div>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-[480px] gap-3 border-t border-line bg-surface px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3">
+      <div className="fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-[480px] gap-3 border-t border-line bg-surface px-gutter pb-[max(12px,env(safe-area-inset-bottom))] pt-3">
         {mode === 'setup' && i > 0 && (
           <Button variant="outline" onClick={() => setStep(STEPS[i - 1])}>
             Back

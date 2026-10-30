@@ -95,10 +95,10 @@ export function Discover() {
 
   return (
     <div>
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-line bg-surface/95 px-4 backdrop-blur">
+      <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-line bg-surface/95 px-gutter backdrop-blur">
         <img src={BRAND.icon} alt="" className="size-9 rounded-full object-contain" />
         <div className="flex-1 leading-tight">
-          <p className="text-[17px] font-extrabold tracking-tight">Discover</p>
+          <p className="text-[18px] font-extrabold tracking-tight">Discover</p>
           <p className="text-[11px] text-faint">Find your {seeking} · swipe right to connect</p>
         </div>
         <IconBtn label="Search" onClick={() => nav('/search')}><SearchIcon className="size-5" /></IconBtn>
@@ -106,7 +106,8 @@ export function Discover() {
         <IconBtn label="Notifications" onClick={() => nav('/notifications')} badge={unreadNotifs}><Bell className="size-5" /></IconBtn>
       </header>
 
-      <div className="px-4 pt-4">
+      <div className="px-gutter pt-5">
+        <h1 className="mb-4 text-[29px] font-bold leading-tight tracking-tight text-brand-dark">{L.connect_to_explore_the_possibilities}</h1>
         {pct < 100 && (
           <button onClick={() => nav('/profile/edit')} className="shadow-premium mb-4 flex w-full items-center gap-3 rounded-2xl border border-line bg-surface p-3.5 text-left">
             <span className="relative grid size-12 shrink-0 place-items-center">
@@ -118,7 +119,7 @@ export function Discover() {
             </span>
             <span className="min-w-0 flex-1">
               <span className="block font-semibold">{fill(L.your_profile_is_xx_completed, `${pct}%`)}</span>
-              <span className="block text-sm text-muted">{L.edit_profile}</span>
+              <span className="block text-[15px] font-semibold text-brand">{L.edit_profile}</span>
             </span>
             <ChevronRight className="size-5 text-faint" />
           </button>
@@ -126,10 +127,10 @@ export function Discover() {
         {top ? (
           <>
             <SwipeCard key={top.id} viewer={user} user={top} onPass={() => pass(top.id)} onConnect={() => connect(top)} onOpen={() => nav(`/member/${top.id}`)} />
-            <div className="mt-4 flex items-center justify-center gap-5">
+            <div className="mt-4 flex items-start justify-center gap-6">
               <RoundBtn label="Pass" onClick={() => pass(top.id)} className="size-14 border border-line-strong bg-surface text-muted"><X className="size-7" /></RoundBtn>
-              <RoundBtn label={L.view_profile} onClick={() => nav(`/member/${top.id}`)} className="size-12 border border-line-strong bg-surface text-navy"><UserRound className="size-5" /></RoundBtn>
-              <RoundBtn label={L.connect} onClick={() => connect(top)} className="brand-gradient size-16 text-white shadow-lg"><UserPlus className="size-7" strokeWidth={2.4} /></RoundBtn>
+              <RoundBtn label={L.view_profile} onClick={() => nav(`/member/${top.id}`)} className="size-14 border border-line-strong bg-surface text-navy"><UserRound className="size-6" /></RoundBtn>
+              <RoundBtn label={L.connect} onClick={() => connect(top)} className="brand-gradient size-14 text-white shadow-lg"><UserPlus className="size-6" strokeWidth={2.4} /></RoundBtn>
             </div>
             <p className="mt-3 text-center text-xs text-faint">Swipe right to send a mentoring request · left to pass · {deck.length} left</p>
             <p className="mt-6 flex items-center justify-center gap-2 pb-2 text-xs text-faint"><Mark size={14} />{L.mentor_match_educational_purpose_only}</p>
@@ -181,8 +182,9 @@ function IconBtn({ label, onClick, badge = 0, children }: { label: string; onCli
 
 function RoundBtn({ label, onClick, className, children }: { label: string; onClick: () => void; className: string; children: React.ReactNode }) {
   return (
-    <button aria-label={label} onClick={onClick} className={cn('grid place-items-center rounded-full transition active:scale-90', className)}>
-      {children}
+    <button onClick={onClick} className="flex flex-col items-center gap-1.5 text-[15px] font-semibold text-navy transition active:scale-95">
+      <span className={cn('grid place-items-center rounded-full', className)}>{children}</span>
+      {label}
     </button>
   );
 }
@@ -234,7 +236,7 @@ function SwipeCard({ viewer, user, onPass, onConnect, onOpen }: { viewer: User; 
         </div>
         <div className="pointer-events-none absolute inset-x-0 bottom-0 p-5 text-white">
           <div className="flex items-baseline gap-2">
-            <h2 className="text-[26px] font-extrabold tracking-tight drop-shadow">{fullName(user)}</h2>
+            <h2 className="text-[22px] font-extrabold tracking-tight drop-shadow">{fullName(user)}</h2>
             {p.pronouns && <span className="text-sm text-white/75">{p.pronouns}</span>}
           </div>
           {p.profession && <p className="mt-0.5 flex items-start gap-1.5 text-sm text-white/90"><Briefcase className="mt-0.5 size-4 shrink-0" /> {p.profession}</p>}
@@ -283,9 +285,9 @@ export function Search() {
           {countFilters(filters) > 0 && <span className="absolute right-0.5 top-0.5 grid size-4 place-items-center rounded-full bg-orange text-[10px] font-bold text-white">{countFilters(filters)}</span>}
         </button>
       } />
-      <div className="px-4 py-3">
+      <div className="px-gutter py-3">
         <Input type="search" placeholder={L.search_mentors} aria-label={L.search_mentors} value={q} onChange={(e) => setQ(e.target.value)} autoFocus />
-        <div className="no-scrollbar -mx-4 mt-3 flex gap-2 overflow-x-auto px-4">
+        <div className="no-scrollbar -mx-gutter mt-3 flex gap-2 overflow-x-auto px-gutter">
           {CLASSIFICATIONS.map((c) => {
             const on = filters.classification.includes(c);
             return (
@@ -300,7 +302,7 @@ export function Search() {
       <ul className="divide-y divide-line">
         {list.map((u) => (
           <li key={u.id}>
-            <Link to={`/member/${u.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-bg-soft">
+            <Link to={`/member/${u.id}`} className="flex items-center gap-3 px-gutter py-3 hover:bg-bg-soft">
               <Avatar user={u} size={52} />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold">{fullName(u)} <span className="text-xs font-normal text-faint">{u.profile.pronouns}</span></p>

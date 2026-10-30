@@ -22,7 +22,7 @@ export function Messages() {
   return (
     <div>
       <Header title="Messages" />
-      <div className="px-4 pt-3">
+      <div className="px-gutter pt-3">
         <div role="tablist" className="grid grid-cols-2 rounded-full bg-bg-soft p-1 ring-1 ring-line">
           {(['chats', 'calls'] as const).map((t) => (
             <button key={t} role="tab" aria-selected={tab === t} onClick={() => setParams(t === 'calls' ? { tab: 'calls' } : {}, { replace: true })}
@@ -36,8 +36,8 @@ export function Messages() {
       {tab === 'calls' ? <CallsHub /> : <>
       {connected.length > 0 && (
         <div className="border-b border-line py-3">
-          <p className="mb-2 px-4 text-xs font-bold uppercase tracking-wider text-faint">Your connections</p>
-          <div className="no-scrollbar flex gap-4 overflow-x-auto px-4">
+          <p className="mb-2 px-gutter text-xs font-bold uppercase tracking-wider text-faint">Your connections</p>
+          <div className="no-scrollbar flex gap-4 overflow-x-auto px-gutter">
             {connected.map((u) => (
               <button key={u.id} onClick={() => nav(`/messages/${u.id}`)} className="flex w-16 shrink-0 flex-col items-center gap-1">
                 <Avatar user={u} size={56} ring />
@@ -50,7 +50,7 @@ export function Messages() {
       <ul className="divide-y divide-line">
         {list.map((t) => (
           <li key={t.other.id}>
-            <Link to={`/messages/${t.other.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-bg-soft">
+            <Link to={`/messages/${t.other.id}`} className="flex items-center gap-3 px-gutter py-3 hover:bg-bg-soft">
               <Avatar user={t.other} size={52} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-2">
@@ -122,7 +122,7 @@ export function Chat() {
           </div>
         )}
       />
-      <div className="flex-1 space-y-1.5 bg-bg-soft px-4 py-4">
+      <div className="flex-1 space-y-1.5 bg-bg-soft px-gutter py-4">
         {msgs.map((m) => {
           const mine = m.from === me.id;
           const day = fmtDate(m.createdAt);
@@ -258,7 +258,7 @@ export function Call() {
       {video && state === 'live' && other.photo
         ? <div className="relative -mt-8 h-72 w-60 overflow-hidden rounded-[28px] shadow-[0_24px_60px_-12px_rgba(0,0,0,0.6)] ring-1 ring-white/20"><img loading="lazy" decoding="async" src={other.photo} alt="" className="size-full object-cover" /><span className="absolute bottom-2 left-2 flex h-3 items-end gap-0.5">{[0, 1, 2].map((i) => <span key={i} className="eq-bar w-1 rounded-full bg-orange-2" style={{ height: '100%', animationDelay: `${i * 0.15}s` }} />)}</span></div>
         : <div className={cn('relative rounded-full', state === 'ringing' && 'pulse-ring')}><Avatar user={other} size={140} /></div>}
-      <h1 className="font-display relative mt-6 text-2xl font-bold">{fullName(other)}</h1>
+      <h1 className="font-display relative mt-6 text-center text-[29px] font-bold leading-tight">{fullName(other)}</h1>
       <p className="relative mt-1 flex items-center gap-2 text-white/80">
         {state === 'live' && <span className="size-2 rounded-full bg-success" />}
         {state === 'ringing' ? (video ? 'Video calling…' : 'Calling…') : mmss}
@@ -282,11 +282,11 @@ export function Call() {
         <CallBtn label="Notes" on={notesOpen} onClick={() => setNotesOpen(true)}><NotebookPen /></CallBtn>
         <CallBtn label="Share" on={share} onClick={() => { setShare(!share); toast(share ? 'Stopped sharing' : 'Screen sharing (demo)'); }}><ScreenShare /></CallBtn>
       </div>
-      <div className="relative grid w-full grid-cols-4 gap-4">
+      <div className="relative grid w-full grid-cols-4 gap-2">
         <CallBtn label={muted ? 'Unmute' : 'Mute'} on={muted} onClick={() => setMuted(!muted)}>{muted ? <MicOff /> : <Mic />}</CallBtn>
         <CallBtn label={video ? 'Camera off' : 'Camera'} on={video} onClick={() => setVideo(!video)}>{video ? <Video /> : <VideoOff />}</CallBtn>
         <CallBtn label="Speaker" on={speaker} onClick={() => setSpeaker(!speaker)}><Volume2 /></CallBtn>
-        <button aria-label="End call" onClick={end} className="flex flex-col items-center gap-1.5 text-xs">
+        <button aria-label="End call" onClick={end} className="flex flex-col items-center gap-1.5 text-[15px] font-medium">
           <span className="grid size-16 place-items-center rounded-full bg-danger"><PhoneOff className="size-7" /></span>End
         </button>
       </div>
@@ -301,7 +301,7 @@ export function Call() {
 
 function CallBtn({ label, on, onClick, children }: { label: string; on: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button aria-label={label} onClick={onClick} className="flex flex-col items-center gap-1.5 text-xs">
+    <button aria-label={label} onClick={onClick} className="flex flex-col items-center gap-1.5 whitespace-nowrap text-[15px] font-medium">
       <span className={cn('grid size-16 place-items-center rounded-full [&_svg]:size-7', on ? 'bg-white text-navy' : 'bg-white/15')}>{children}</span>
       {label}
     </button>

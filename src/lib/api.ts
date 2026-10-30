@@ -351,28 +351,26 @@ export const validEmail = (e: string) => EMAIL_RE.test(e.trim());
 export const strongPassword = (p: string) => p.length >= BRAND.minPassword;
 
 /** Where a member goes after logging in. */
-export type Step = '/verify' | '/upload-photo' | '/select-college';
+export type Step = '/verify' | '/select-college';
 
 /**
  * Log In: sends `email`, `password`, `firebase_token`. Accounts are created by the college (admin), so
- * there is no sign-up. The reply never contains the verification code.
+ * there is no sign-up. The reply never contains the verification code. Every log-in is confirmed with the
+ * emailed code, then the member goes through Select Your College, Upload Profile and the Educational notice.
  */
 export function logIn(email: string, password: string): { error: string } | { next: Step } {
   const u = db.users.find((x) => x.email.toLowerCase() === email.trim().toLowerCase());
   if (!u) return { error: L.user_not_found };
   if ((u.password ?? DEMO_PASSWORD) !== password) return { error: L.invalid_email_or_password };
   if (u.suspended) return { error: L.your_account_is_deleted_or_you_are_removed_please_contact_admin_for_further_assistance };
-  const verified = db.device.verified.includes(u.id);
   commit((d) => {
     // Terms acceptance is recorded on the account, not only on the phone.
     const user = d.users.find((x) => x.id === u.id)!;
     user.termsAcceptedAt ??= new Date().toISOString();
     d.device.termsAccepted = true;
-    if (verified) d.sessionUserId = u.id;
-    else d.pendingOtp = { userId: u.id, expiresAt: Date.now() + BRAND.otpSeconds * 1000 };
+    d.pendingOtp = { userId: u.id, expiresAt: Date.now() + BRAND.otpSeconds * 1000 };
   });
-  if (verified) giveDemoSocialNow(u.id);
-  return { next: !verified ? '/verify' : u.photo ? '/select-college' : '/upload-photo' };
+  return { next: '/verify' };
 }
 
 /** Verify: sends `otp`, `user_id`, `firebase_token`. */
@@ -383,10 +381,10 @@ export function verifyOtp(code: string): { error: string } | { next: Step } {
   commit((d) => {
     d.sessionUserId = p.userId;
     d.pendingOtp = null;
-    d.device.verified.push(p.userId);
+    if (!d.device.verified.includes(p.userId)) d.device.verified.push(p.userId);
   });
   giveDemoSocialNow(p.userId);
-  return { next: userById(p.userId)?.photo ? '/select-college' : '/upload-photo' };
+  return { next: '/select-college' };
 }
 
 function giveDemoSocialNow(userId: string) {
@@ -656,16 +654,19 @@ export function unblock(otherId: string) {
 
 // ---------- admin ----------
 
-export const isAdmin = (d: Db = db) => {
-  const id = d.realUserId ?? d.sessionUserId ?? '';
-  if (d.adminIds.includes(id)) return true;
-  // Demo: open to everyone except Professionals (see BRAND.features.adminForEveryone).
-  const u = userById(id, d);
-  return BRAND.features.adminForEveryone && !!u && u.role !== 'professional';
-};
+/** Only accounts on the Super Admin list. While an admin is "viewing as" a member, the admin's own account counts. */
+export const isAdmin = (d: Db = db) => d.adminIds.includes(d.realUserId ?? d.sessionUserId ?? '');
 
-/** Records a Super Admin action in the audit log (call inside a commit). */
+export const ADMIN_ONLY = 'This feature is only available to admins.';
+
+/** Stops an admin action for anyone who isn't a Super Admin, even if the screen was reached some other way. */
+function requireAdmin() {
+  if (!isAdmin(db)) throw new Error(ADMIN_ONLY);
+}
+
+/** Records a Super Admin action in the audit log (call inside a commit). Every admin action goes through here. */
 function audit(d: Db, action: string, detail: string) {
+  requireAdmin();
   d.audit.unshift({ id: rid(), actorId: d.realUserId ?? d.sessionUserId ?? '', action, detail, createdAt: new Date().toISOString() });
   d.audit = d.audit.slice(0, 300);
 }
@@ -1069,6 +1070,7 @@ export function sendAdminEmail(e: { to: string; toName: string; userId?: string;
 // ---------- admin data ----------
 
 export function exportDbJson() {
+  requireAdmin();
   return JSON.stringify({ ...db, sessionUserId: null, realUserId: null, incoming: null }, null, 2);
 }
 
@@ -1099,6 +1101,7 @@ export function resetDemoData() {
 }
 
 export function clearAdminLog(what: 'audit' | 'outbox' | 'pushHistory') {
+  requireAdmin();
   commit((d) => {
     d[what] = [];
   });

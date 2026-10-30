@@ -1,9 +1,9 @@
-import { Ban, Compass, MessageCircle, ShieldCheck, ShieldX, UserRound, UsersRound } from 'lucide-react';
+import { Ban, Compass, MessageCircle, ShieldX, UserRound, UsersRound } from 'lucide-react';
 import { useEffect } from 'react';
 import { Link, NavLink, Navigate, Outlet } from 'react-router-dom';
 import { BRAND } from '@/config/brand';
 import { L } from '@/data/labels';
-import { isAdmin, signOut, stopImpersonating, fullName, threads } from '@/lib/api';
+import { ADMIN_ONLY, isAdmin, signOut, stopImpersonating, fullName, threads } from '@/lib/api';
 import { cn, useDb, useMe } from '@/lib/store';
 
 export const TABS = [
@@ -12,8 +12,6 @@ export const TABS = [
   { to: '/messages', label: 'Messages', icon: MessageCircle },
   { to: '/profile', label: 'Profile', icon: UserRound },
 ];
-/** Only Super Admins see this tab. */
-const ADMIN_TAB = { to: '/admin', label: 'Admin', icon: ShieldCheck };
 
 /** Phone frame on wide screens, full screen on phones. Also applies the Accessibility settings. */
 export function Frame({ children }: { children: React.ReactNode }) {
@@ -51,8 +49,8 @@ export function RequireAdmin({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-app flex-col items-center justify-center px-8 text-center">
       <div className="mb-5 grid size-20 place-items-center rounded-full bg-danger/10 text-danger ring-8 ring-danger/5"><ShieldX className="size-9" /></div>
-      <h1 className="font-display text-xl font-bold">Super Admin only</h1>
-      <p className="mt-2 text-sm text-muted">This area is for {BRAND.orgName} administrators. If you need access, contact {BRAND.supportEmail}.</p>
+      <h1 className="font-display text-xl font-bold">{ADMIN_ONLY}</h1>
+      <p className="mt-2 text-sm text-muted">Your account doesn’t have admin access. If you think you need it, contact {BRAND.supportEmail}.</p>
       <Link to="/discover" replace className="mt-6 rounded-full bg-navy px-6 py-3 text-sm font-semibold text-white">Back to the app</Link>
     </div>
   );
@@ -75,14 +73,13 @@ export function AppShell() {
   const requests = useDb((d) => d.connections.filter((c) => c.to === d.sessionUserId && c.status === 'requested').length);
   const meetings = useDb((d) => d.meetings.filter((m) => m.invitee === d.sessionUserId && m.status === 'pending').length);
   const impersonating = useDb((d) => !!d.realUserId);
-  const admin = useDb((d) => isAdmin(d) && !d.realUserId);
-  const openReports = useDb((d) => d.reports.filter((r) => (r.status ?? 'open') === 'open').length);
-  const badges: Record<string, number> = { '/messages': unread, '/connections': requests, '/profile': meetings, '/admin': openReports };
-  const tabs = admin ? [...TABS, ADMIN_TAB] : TABS;
+  const badges: Record<string, number> = { '/messages': unread, '/connections': requests, '/profile': meetings };
+  // Admins open the Admin panel from their Profile, not from this menu.
+  const tabs = TABS;
   return (
     <RequireMember>
       {impersonating && user && (
-        <div className="sticky top-0 z-40 flex items-center gap-2 bg-orange px-4 py-2 text-sm font-medium text-white">
+        <div className="sticky top-0 z-40 flex items-center gap-2 bg-orange px-gutter py-2 text-sm font-medium text-white">
           <span className="flex-1 truncate">Super Admin: viewing as {fullName(user)}</span>
           <button onClick={stopImpersonating} className="rounded-full bg-navy px-3 py-1 text-xs font-semibold text-white">
             Exit
